@@ -1,37 +1,33 @@
 package com.dastan.markdownapplication
 
-import android.app.Activity
-import android.app.AlertDialog
-import android.content.Intent
-import android.graphics.Color
-import android.net.Uri
 import android.os.Bundle
-import android.provider.OpenableColumns
 import android.view.Menu
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.TextView
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import com.dastan.markdownapplication.data.model.CachedFile
-import com.dastan.markdownapplication.ui.ImportViewModel
+import com.dastan.markdownapplication.data.model.UiTab
+import com.dastan.markdownapplication.ui.FilePickerLauncher
+import com.dastan.markdownapplication.ui.importfile.ImportDialogFragment
+import com.dastan.markdownapplication.ui.importfile.ImportViewModel
+import com.dastan.markdownapplication.ui.toolbar.ToolbarController
 import com.dastan.markdownapplication.ui.edit.MarkdownEditFragment
 import com.dastan.markdownapplication.ui.edit.MarkdownEditViewModel
+import com.dastan.markdownapplication.ui.edit.TabsViewModel
+import com.dastan.markdownapplication.ui.toolbar.ListViewModel
 import com.dastan.markdownapplication.ui.preview.MarkdownPreviewFragment
 import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
+
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
+    private val tabsVM: TabsViewModel by viewModels()
     private val listViewModel: ListViewModel by viewModels()
     private val editViewModel: MarkdownEditViewModel by viewModels()
     private val importVM: ImportViewModel by viewModels()
@@ -40,15 +36,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navigationView: NavigationView
     private lateinit var toolbar: Toolbar
     private lateinit var drawerMenu: Menu
-
-    private lateinit var filePickerLauncher: ActivityResultLauncher<Intent>
-
     private lateinit var tabEdit: TextView
     private lateinit var tabPreview: TextView
-    private var addDialogShown = false
+
+    private lateinit var toolbarController: ToolbarController
+    private lateinit var filePickerLauncher: FilePickerLauncher
+
+    //private var addDialogShown = false
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        //TODO when you are on edit you can click to toolbar however keyboard might be opened
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -57,31 +54,17 @@ class MainActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
         tabEdit = findViewById(R.id.tab_edit)
         tabPreview = findViewById(R.id.tab_preview)
-
-        setSupportActionBar(toolbar)
-
-        val toggle = ActionBarDrawerToggle(
-            this, drawerLayout, toolbar,
-            R.string.navigation_drawer_open,
-            R.string.navigation_drawer_close
-        )
-        drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
-
         drawerMenu = navigationView.menu
 
-        filePickerLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val uri = result.data?.data ?: return@registerForActivityResult
-                importVM.fromUri(uri, contentResolver)
-            }
+        toolbarController = ToolbarController(this, drawerLayout, toolbar).also { it.init() }
+        filePickerLauncher = FilePickerLauncher(this) { uri ->
+            importVM.fromUri(uri, contentResolver)
         }
 
         navigationView.setNavigationItemSelectedListener { item ->
             if (item.itemId == R.id.nav_add_file) {
-                showAddDialog()
+                ImportDialogFragment()
+                    .show(supportFragmentManager, "import_dialog")
             } else {
                 listViewModel.files.value
                     .firstOrNull { it.name == item.title }
@@ -93,16 +76,26 @@ class MainActivity : AppCompatActivity() {
 
         tabEdit.setOnClickListener {
             showEditFragment()
-            highlightTab(true)
+            tabsVM.select(UiTab.EDIT)
         }
-
         tabPreview.setOnClickListener {
             showPreviewFragment()
-            highlightTab(false)
+            tabsVM.select(UiTab.PREVIEW)
         }
 
         observeViewModel()
+        observeTabs()
     }
+
+
+    override fun onImportFromFile() {
+        filePickerLauncher.launch()
+    }
+
+    override fun onImportFromUrl(url: String) {
+        importVM.fromUrl(url)
+    }
+
 
     private fun observeViewModel() {
         lifecycleScope.launchWhenStarted {
@@ -111,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launchWhenStarted {
             merge(listViewModel.open, importVM.opened).collect { file ->
                 editViewModel.setFile(file)
-                showEditFragment();
+                showEditFragment()
                 highlightTab(true)
             }
         }
@@ -122,57 +115,6 @@ class MainActivity : AppCompatActivity() {
         drawerMenu.add(0, R.id.nav_add_file, 0, "Добавить файл")
         fileList.forEach { f -> drawerMenu.add(f.name) }
     }
-
-    private fun showAddDialog() {
-        val options = arrayOf("Из файла", "По ссылке")
-        AlertDialog.Builder(this)
-            .setTitle("Импорт Markdown")
-            .setItems(options) { _, i ->
-                if (i == 0) openFilePicker()
-                else openUrlDialog()
-            }
-            .setNegativeButton("Отмена", null)
-            .show()
-    }
-
-    private fun openFilePicker() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "text/*"
-        }
-        filePickerLauncher.launch(intent)
-    }
-
-    private fun openUrlDialog() {
-        val input = EditText(this).apply {
-            hint = "https://example.com/file.md"
-        }
-
-        val container = FrameLayout(this).apply {
-            val params = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            )
-            params.setMargins(48, 0, 48, 0)
-            layoutParams = params
-            addView(input)
-        }
-
-        val dialog =AlertDialog.Builder(this)
-            .setTitle("Укажите ссылку на Markdown-файл")
-            .setView(container)
-            .setPositiveButton("Импорт") { _, _ ->
-                val url = input.text.toString().trim()
-                if (url.isNotEmpty()) {
-                    importVM.fromUrl(url)
-                }
-            }
-            .setNegativeButton("Отмена", null)
-            .show()
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(Color.BLACK)
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(Color.BLACK)
-    }
-
 
     private fun showEditFragment() {
         supportFragmentManager.beginTransaction()
@@ -185,23 +127,18 @@ class MainActivity : AppCompatActivity() {
             .replace(R.id.content_frame, MarkdownPreviewFragment())
             .commit()
     }
+    private fun observeTabs() {
+        lifecycleScope.launchWhenStarted {
+            tabsVM.tab.collect { tab ->
+                highlightTab(tab == UiTab.EDIT)
+            }
+        }
+    }
 
-    private fun highlightTab(editSelected: Boolean) {
+
+    fun highlightTab(editSelected: Boolean) {
         tabEdit.isSelected = editSelected
         tabPreview.isSelected = !editSelected
     }
-
-    // Optional: fallback if you still need file name for debug
-    /*private fun getFileNameFromUri(uri: Uri): String {
-        var name = "unnamed.md"
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        cursor?.use {
-            val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (it.moveToFirst() && index != -1) {
-                name = it.getString(index)
-            }
-        }
-        return name
-    }*/
 }
 

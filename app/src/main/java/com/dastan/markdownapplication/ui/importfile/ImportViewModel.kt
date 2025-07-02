@@ -1,4 +1,4 @@
-package com.dastan.markdownapplication.ui
+package com.dastan.markdownapplication.ui.importfile
 
 import android.content.ContentResolver
 import android.net.Uri

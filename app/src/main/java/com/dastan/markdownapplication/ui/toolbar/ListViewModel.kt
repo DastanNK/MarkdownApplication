@@ -1,4 +1,4 @@
-package com.dastan.markdownapplication
+package com.dastan.markdownapplication.ui.toolbar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,13 +11,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ListViewModel @Inject constructor(
-    private val getAll: GetAllFilesUseCase,
-    //private val getLast: GetLastOpenedFileUseCase,
-    private val markOpened: MarkFileOpenedUseCase,
-    //private val importFromUrlUseCase: ImportFromUrlUseCase,
-    //private val importFromUriUseCase: ImportFromUriUseCase,
-
-    //private val addFileUseCase:AddFileUseCase
+    getAll: GetAllFilesUseCase,
+    private val markOpened: MarkFileOpenedUseCase
 ) : ViewModel() {
     val files: StateFlow<List<CachedFile>> =
         getAll.execute()
