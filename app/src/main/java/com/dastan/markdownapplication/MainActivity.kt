@@ -20,17 +20,21 @@ import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import com.dastan.markdownapplication.data.model.CachedFile
+import com.dastan.markdownapplication.ui.ImportViewModel
 import com.dastan.markdownapplication.ui.edit.MarkdownEditFragment
+import com.dastan.markdownapplication.ui.edit.MarkdownEditViewModel
 import com.dastan.markdownapplication.ui.preview.MarkdownPreviewFragment
 import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.merge
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    private val mainViewModel: MainViewModel by viewModels()
+    private val listViewModel: ListViewModel by viewModels()
+    private val editViewModel: MarkdownEditViewModel by viewModels()
+    private val importVM: ImportViewModel by viewModels()
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
@@ -71,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         ) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 val uri = result.data?.data ?: return@registerForActivityResult
-                mainViewModel.importFromUri(uri, contentResolver)
+                importVM.fromUri(uri, contentResolver)
             }
         }
 
@@ -79,8 +83,9 @@ class MainActivity : AppCompatActivity() {
             if (item.itemId == R.id.nav_add_file) {
                 showAddDialog()
             } else {
-                val fileName = item.title.toString()
-                mainViewModel.selectByName(fileName)
+                listViewModel.files.value
+                    .firstOrNull { it.name == item.title }
+                    ?.let(listViewModel::select)
             }
             drawerLayout.closeDrawers()
             true
@@ -100,24 +105,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun observeViewModel() {
-        lifecycleScope.launch {
-            mainViewModel.files.collectLatest { fileList ->
-                updateDrawerMenu(fileList)
-                delay(80)
-                if (fileList.isEmpty() && !addDialogShown) {
-                    addDialogShown = true
-                    showAddDialog()
-                }
-            }
-
+        lifecycleScope.launchWhenStarted {
+            listViewModel.files.collect { updateDrawerMenu(it) }
         }
-
-        lifecycleScope.launch {
-            mainViewModel.current.collectLatest { file ->
-                if (file != null) {
-                    showEditFragment()
-                    highlightTab(true)
-                }
+        lifecycleScope.launchWhenStarted {
+            merge(listViewModel.open, importVM.opened).collect { file ->
+                editViewModel.setFile(file)
+                showEditFragment();
+                highlightTab(true)
             }
         }
     }
@@ -125,13 +120,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateDrawerMenu(fileList: List<CachedFile>) {
         drawerMenu.clear()
         drawerMenu.add(0, R.id.nav_add_file, 0, "Добавить файл")
-        fileList.forEach { file ->
-            drawerMenu.add(file.name).setOnMenuItemClickListener {
-                mainViewModel.select(file)
-                drawerLayout.closeDrawers()
-                true
-            }
-        }
+        fileList.forEach { f -> drawerMenu.add(f.name) }
     }
 
     private fun showAddDialog() {
@@ -175,7 +164,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Импорт") { _, _ ->
                 val url = input.text.toString().trim()
                 if (url.isNotEmpty()) {
-                    mainViewModel.importFromUrl(url)
+                    importVM.fromUrl(url)
                 }
             }
             .setNegativeButton("Отмена", null)
@@ -186,18 +175,14 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun showEditFragment() {
-        val content = mainViewModel.current.value?.content ?: ""
-        val fragment = MarkdownEditFragment.newInstance(content)
         supportFragmentManager.beginTransaction()
-            .replace(R.id.content_frame, fragment)
+            .replace(R.id.content_frame, MarkdownEditFragment())
             .commit()
     }
 
     private fun showPreviewFragment() {
-        val content = mainViewModel.current.value?.content ?: ""
-        val fragment = MarkdownPreviewFragment.newInstance(content)
         supportFragmentManager.beginTransaction()
-            .replace(R.id.content_frame, fragment)
+            .replace(R.id.content_frame, MarkdownPreviewFragment())
             .commit()
     }
 
@@ -219,3 +204,4 @@ class MainActivity : AppCompatActivity() {
         return name
     }*/
 }
+

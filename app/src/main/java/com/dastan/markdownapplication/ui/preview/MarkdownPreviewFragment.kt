@@ -7,47 +7,45 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.dastan.markdownapplication.domain.usecases.ParseMarkdownUseCase
 import com.dastan.markdownapplication.ui.MarkdownRenderer
+import com.dastan.markdownapplication.ui.edit.MarkdownEditViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MarkdownPreviewFragment : Fragment() {
-    private val markdownPreviewViewModel:MarkdownPreviewViewModel by viewModels()
 
-    companion object {
-        private const val ARG_TEXT = "markdown_text"
-
-        fun newInstance(text: String): MarkdownPreviewFragment {
-            val fragment = MarkdownPreviewFragment()
-            val args = Bundle()
-            args.putString(ARG_TEXT, text)
-            fragment.arguments = args
-            return fragment
-        }
-    }
-
+    /** та же VM, что и у Edit-фрагмента */
+    private val editVM: MarkdownEditViewModel by activityViewModels()
+    private val previewViewModel:MarkdownPreviewViewModel by activityViewModels()
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?,
+        inflater: LayoutInflater, c: ViewGroup?, s: Bundle?
     ): View {
-        val context = requireContext()
+        val ctx = requireContext()
 
-        val linear = LinearLayout(context).apply {
+        /* контейнер для готовых вью */
+        val linear = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(16, 16, 16, 16)
         }
-        val scroll = ScrollView(context).apply { addView(linear) }
+        val scroll = ScrollView(ctx).apply { addView(linear) }
 
-        val raw = arguments?.getString(ARG_TEXT) ?: ""
-        val blocks = markdownPreviewViewModel.getMarkdownBlocks(raw)
+        /* Markdown-рендерер (Markwon или свой) */
+        val renderer = MarkdownRenderer(ctx, viewLifecycleOwner.lifecycleScope)
 
-        val renderer = MarkdownRenderer(requireContext(), viewLifecycleOwner.lifecycleScope)
-        renderer.render(blocks).forEach(linear::addView)
-
+        /* подписка на текст файла */
+        viewLifecycleOwner.lifecycleScope.launch {
+            editVM.current.collect { file ->
+                val md = file?.content.orEmpty()
+                val blocks = previewViewModel.getMarkdownBlocks(md)
+                linear.removeAllViews()                       // очистили
+                renderer.render(blocks).forEach(linear::addView)  // перерисовали
+            }
+        }
         return scroll
     }
 }

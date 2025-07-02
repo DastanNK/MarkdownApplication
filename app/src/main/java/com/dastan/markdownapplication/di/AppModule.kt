@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.dastan.markdownapplication.data.local.AppDatabase
 import com.dastan.markdownapplication.data.local.FileDao
 import com.dastan.markdownapplication.data.repositiry.CachedFileRepository
+import com.dastan.markdownapplication.data.repositiry.EditFileRepository
 import com.dastan.markdownapplication.domain.usecases.*
 import dagger.Module
 import dagger.Provides
@@ -24,7 +25,7 @@ object AppModule {
     fun provideDatabase(
         @ApplicationContext ctx: Context
     ): AppDatabase =
-        Room.databaseBuilder(ctx, AppDatabase::class.java, "markdown.db")
+        Room.databaseBuilder(ctx, AppDatabase::class.java, "markdown2.db")
             .fallbackToDestructiveMigration()
             .build()
 
@@ -36,6 +37,12 @@ object AppModule {
     fun provideCachedFileRepository(
         dao: FileDao
     ): CachedFileRepository = CachedFileRepository(dao)
+
+    @Provides
+    @Singleton
+    fun provideEditFileRepository(
+        dao: FileDao
+    ): EditFileRepository = EditFileRepository(dao)
 
     @Provides
     fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
@@ -61,17 +68,22 @@ object AppModule {
         addFile: AddFileUseCase,
         repo: CachedFileRepository
     ) = ImportFileUseCase(addFile, repo)
+
     @Provides
     fun provideImportFromUriUseCase(
         importFile: ImportFileUseCase
     ) = ImportFromUriUseCase(importFile)
+
     @Provides
     fun provideImportFromUrlUseCase(
         importFile: ImportFileUseCase
     ) = ImportFromUrlUseCase(importFile)
+
     @Provides
     fun provideParseMarkdownUseCase() = ParseMarkdownUseCase()
 
+    @Provides
+    fun provideUpdateFileUseCase(repo: EditFileRepository) = UpdateFileUseCase(repo)
 
 
 }

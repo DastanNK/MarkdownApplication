@@ -3,6 +3,7 @@ package com.dastan.markdownapplication.data.local
 import androidx.room.*
 import androidx.room.OnConflictStrategy.Companion.REPLACE
 import com.dastan.markdownapplication.data.model.CachedFile
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FileDao {
@@ -13,7 +14,7 @@ interface FileDao {
     suspend fun getByName(name: String): CachedFile?
 
     @Query("SELECT * FROM cached_files ORDER BY lastOpened DESC, id DESC")
-    suspend fun getAll(): List<CachedFile>
+    fun getAll(): Flow<List<CachedFile>>
 
     @Query("SELECT * FROM cached_files ORDER BY lastOpened DESC LIMIT 1")
     suspend fun getLastOpened(): CachedFile?
@@ -23,6 +24,7 @@ interface FileDao {
 
     @Query("UPDATE cached_files SET content = :content WHERE name = :name")
     suspend fun updateContent(name: String, content: String)
+
     @Query("UPDATE cached_files SET name = :newName WHERE id = :id")
     suspend fun rename(id: Long, newName: String)
 }
