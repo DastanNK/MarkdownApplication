@@ -1,11 +1,13 @@
 package com.dastan.markdownapplication.domain.usecases
 
+import com.dastan.markdownapplication.data.model.Inline
 import com.dastan.markdownapplication.data.model.MarkdownBlock
 
-//TODO: что если index++ сделается но там может быть перемешка bold with table or bold with image. Edge cases
 
 class ParseMarkdownUseCase {
-
+    private val token = Regex(
+        """(\*\*(.+?)\*\*|__(.+?)__|\*(.+?)\*|_(.+?)_|~~(.+?)~~)"""
+    )
     fun execute(markdown: String): List<MarkdownBlock> {
         val blocks = mutableListOf<MarkdownBlock>()
         val lines = markdown.lines()
@@ -42,12 +44,32 @@ class ParseMarkdownUseCase {
                 continue
             }
 
-            if (line.isNotBlank()) {
-                blocks += MarkdownBlock.Paragraph(line)
+            if (line.isNotBlank()){
+                blocks += MarkdownBlock.Paragraph(parseInline(line))
             }
             index++
         }
         return blocks
+    }
+
+    private fun parseInline(src: String): List<Inline> {
+        val list  = mutableListOf<Inline>()
+        var last  = 0
+        for (m in token.findAll(src)) {
+            if (m.range.first > last)
+                list.add(Inline.Text(src.substring(last, m.range.first)))
+            when {
+                m.groupValues[2].isNotEmpty() || m.groupValues[3].isNotEmpty() ->
+                    list.add(Inline.Bold(m.groupValues[2] + m.groupValues[3]))
+                m.groupValues[4].isNotEmpty() || m.groupValues[5].isNotEmpty() ->
+                    list.add(Inline.Italic(m.groupValues[4] + m.groupValues[5]))
+                m.groupValues[6].isNotEmpty() ->
+                    list.add(Inline.Strike(m.groupValues[6]))
+            }
+            last = m.range.last + 1
+        }
+        if (last < src.length) list.add(Inline.Text(src.substring(last)))
+        return list
     }
 
     private fun parseTable(lines: List<String>): MarkdownBlock.Table? {

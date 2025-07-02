@@ -21,10 +21,11 @@ import com.dastan.markdownapplication.ui.toolbar.ListViewModel
 import com.dastan.markdownapplication.ui.preview.MarkdownPreviewFragment
 import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 
-
+//TODO Диалог когда нету файлов
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
     private val tabsVM: TabsViewModel by viewModels()
@@ -75,10 +76,12 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
         }
 
         tabEdit.setOnClickListener {
+            highlightTab(true)
             showEditFragment()
             tabsVM.select(UiTab.EDIT)
         }
         tabPreview.setOnClickListener {
+            highlightTab(false)
             showPreviewFragment()
             tabsVM.select(UiTab.PREVIEW)
         }
@@ -105,7 +108,7 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
             merge(listViewModel.open, importVM.opened).collect { file ->
                 editViewModel.setFile(file)
                 showEditFragment()
-                highlightTab(true)
+                tabsVM.select(UiTab.EDIT)
             }
         }
     }
@@ -127,14 +130,9 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
             .replace(R.id.content_frame, MarkdownPreviewFragment())
             .commit()
     }
-    private fun observeTabs() {
-        lifecycleScope.launchWhenStarted {
-            tabsVM.tab.collect { tab ->
-                highlightTab(tab == UiTab.EDIT)
-            }
-        }
+    private fun observeTabs() = lifecycleScope.launchWhenStarted {
+        tabsVM.tab.collect { tab -> highlightTab(tab == UiTab.EDIT) }
     }
-
 
     fun highlightTab(editSelected: Boolean) {
         tabEdit.isSelected = editSelected
