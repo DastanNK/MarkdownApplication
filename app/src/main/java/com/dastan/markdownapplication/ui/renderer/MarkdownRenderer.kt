@@ -1,9 +1,8 @@
-package com.dastan.markdownapplication.ui
+package com.dastan.markdownapplication.ui.renderer
 
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.graphics.Typeface
-import android.text.Html
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.StrikethroughSpan
@@ -13,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.content.res.AppCompatResources
 import com.dastan.markdownapplication.R
+import com.dastan.markdownapplication.core.ImageMemoryCache
 import com.dastan.markdownapplication.data.model.Inline
 import com.dastan.markdownapplication.data.model.MarkdownBlock
 import com.dastan.markdownapplication.domain.usecases.ParseMarkdownUseCase
@@ -27,7 +27,7 @@ class MarkdownRenderer(
     private val context: Context,
     private val scope: CoroutineScope
 ) {
-
+    private val imageCache = ImageMemoryCache(maxSize = 50)
     fun render(blocks: List<MarkdownBlock>): List<View> =
         blocks.map { block ->
             when (block) {
@@ -84,7 +84,7 @@ class MarkdownRenderer(
 
 
     private fun renderImage(img: MarkdownBlock.Image): View {
-        val iv = ImageView(context).apply {
+        val imageView = ImageView(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -92,16 +92,24 @@ class MarkdownRenderer(
             contentDescription = img.alt
         }
 
-        scope.launch {
-            val bmp = withContext(Dispatchers.IO) {
-                runCatching {
-                    URL(img.url).openStream().use { BitmapFactory.decodeStream(it) }
-                }.getOrNull()
+        val cachedBitmap = imageCache.get(img.url)
+        if (cachedBitmap != null) {
+            imageView.setImageBitmap(cachedBitmap)
+        } else {
+            scope.launch {
+                val bitmap = withContext(Dispatchers.IO) {
+                    runCatching {
+                        URL(img.url).openStream().use { BitmapFactory.decodeStream(it) }
+                    }.getOrNull()
+                }
+                bitmap?.let {
+                    imageCache.put(img.url, it)
+                    imageView.setImageBitmap(it)
+                }
             }
-            bmp?.let { iv.setImageBitmap(it) }
         }
 
-        return iv
+        return imageView
     }
     private fun buildSpannable(parts: List<Inline>): Spanned =
         SpannableStringBuilder().apply {

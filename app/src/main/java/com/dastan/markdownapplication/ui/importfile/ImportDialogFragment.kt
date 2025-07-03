@@ -7,21 +7,24 @@ import android.os.Bundle
 import android.widget.EditText
 import android.widget.FrameLayout
 import androidx.fragment.app.DialogFragment
+import com.dastan.markdownapplication.R
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class ImportDialogFragment : DialogFragment() {
-    //TODO: rewrite it to R.string....
     interface Callback {
         fun onImportFromFile()
         fun onImportFromUrl(url: String)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val options = arrayOf("Из файла", "По ссылке")
         val ctx = requireContext()
+        val options =arrayOf(
+            ctx.getString(R.string.from_file),
+            ctx.getString(R.string.from_url)
+        )
         return AlertDialog.Builder(ctx)
-            .setTitle("Импорт Markdown")
+            .setTitle(R.string.import_markdown)
             .setItems(options) { _, which ->
                 val cb = parentFragment as? Callback ?: activity as Callback
                 if (which == 0) {
@@ -30,13 +33,13 @@ class ImportDialogFragment : DialogFragment() {
                     showUrlDialog(cb)
                 }
             }
-            .setNegativeButton("Отмена", null)
+            .setNegativeButton(R.string.cancel, null)
             .create()
 
     }
 
     private fun showUrlDialog(cb: Callback) {
-        val input = EditText(requireContext()).apply { hint = "https://example.com/file.md" }
+        val input = EditText(requireContext()).apply { hint = getString(R.string.url_hint)}
         val container = FrameLayout(requireContext()).apply {
             val params = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -47,13 +50,13 @@ class ImportDialogFragment : DialogFragment() {
             addView(input)
         }
         val dialog =AlertDialog.Builder(requireContext())
-            .setTitle("Укажите ссылку на Markdown-файл")
+            .setTitle(R.string.enter_url_title)
             .setView(container)
-            .setPositiveButton("Импорт") { _, _ ->
+            .setPositiveButton(R.string.import_name) { _, _ ->
                 val url = input.text.toString().trim()
                 if (url.isNotEmpty()) cb.onImportFromUrl(url)
             }
-            .setNegativeButton("Отмена", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(Color.BLACK)
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(Color.BLACK)

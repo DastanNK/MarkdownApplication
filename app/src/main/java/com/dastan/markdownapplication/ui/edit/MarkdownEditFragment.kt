@@ -8,11 +8,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.core.view.setPadding
-import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import com.dastan.markdownapplication.MainActivity
 import com.dastan.markdownapplication.R
 import com.dastan.markdownapplication.data.model.UiTab
 import com.dastan.markdownapplication.ui.preview.MarkdownPreviewFragment
@@ -30,8 +28,8 @@ class MarkdownEditFragment : Fragment() {
     private lateinit var btnSave: Button
 
     override fun onCreateView(
-        inflater: android.view.LayoutInflater,
-        container: android.view.ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         val ctx = requireContext()
@@ -41,7 +39,7 @@ class MarkdownEditFragment : Fragment() {
         }
 
         edit = EditText(ctx).apply { textSize = 16f }
-        btnSave = Button(ctx).apply { text = "Сохранить" }
+        btnSave = Button(ctx).apply { text = getString(R.string.save) }
 
         root.addView(
             edit,

@@ -4,6 +4,7 @@ import com.dastan.markdownapplication.data.model.Inline
 import com.dastan.markdownapplication.data.model.MarkdownBlock
 import com.dastan.markdownapplication.domain.usecases.ParseMarkdownUseCase
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertTrue
 import org.junit.Test
 
 class ParseMarkdownUseCaseTest {
@@ -59,6 +60,26 @@ class ParseMarkdownUseCaseTest {
 
         assertEquals(listOf("Name", "Age"), tbl.header)
         assertEquals(listOf(listOf("Bob", "23"), listOf("Eva", "31")), tbl.rows)
+    }
+    @Test
+    fun `single pipe line not parsed as table but as paragraph first case`() {
+        val md = "| Left columns  | Right columns |"
+        val blocks = parser.execute(md)
+
+        assertEquals(1, blocks.size)
+        val paragraph = blocks.first() as MarkdownBlock.Paragraph
+        val actualText = (paragraph.segments.first() as Inline.Text).value
+        assertEquals("| Left columns  | Right columns |", actualText)
+    }
+
+    @Test
+    fun `single pipe line not parsed as table but as paragraph second case`() {
+        val md = "| Just a pipe line |"
+        val blocks = parser.execute(md)
+
+        assertEquals(1, blocks.size)
+        val paragraph = blocks.first() as MarkdownBlock.Paragraph
+        assertEquals("| Just a pipe line |", (paragraph.segments.first() as Inline.Text).value)
     }
 
     @Test

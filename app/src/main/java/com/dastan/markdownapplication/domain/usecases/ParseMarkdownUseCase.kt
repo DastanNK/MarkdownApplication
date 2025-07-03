@@ -31,7 +31,13 @@ class ParseMarkdownUseCase {
                     tableLines += lines[index]
                     index++
                 }
-                parseTable(tableLines)?.let(blocks::add)
+                val table = parseTable(tableLines)
+                if (table != null) {
+                    blocks.add(table)
+                } else {
+                    val paragraphText = tableLines.joinToString("\n")
+                    blocks.add(MarkdownBlock.Paragraph(listOf(Inline.Text(paragraphText))))
+                }
                 continue
             }
 

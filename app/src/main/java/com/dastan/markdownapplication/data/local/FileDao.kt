@@ -26,5 +26,5 @@ interface FileDao {
     suspend fun updateContent(name: String, content: String)
 
     @Query("UPDATE cached_files SET name = :newName WHERE id = :id")
-    suspend fun rename(id: Long, newName: String)
+    suspend fun rename(id: String, newName: String)
 }

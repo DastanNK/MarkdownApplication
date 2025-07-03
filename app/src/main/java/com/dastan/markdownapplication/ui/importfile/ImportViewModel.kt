@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.dastan.markdownapplication.data.model.CachedFile
 import com.dastan.markdownapplication.domain.usecases.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,7 +21,7 @@ class ImportViewModel @Inject constructor(
     val opened = _opened.asSharedFlow()
 
     fun fromUri(uri: Uri, cr: ContentResolver) = viewModelScope.launch {
-        _opened.tryEmit(importFromUriUseCase.execute(uri, cr))   // файл уже в БД
+        _opened.tryEmit(importFromUriUseCase.execute(uri, cr))
     }
     fun fromUrl(url: String) = viewModelScope.launch {
         _opened.tryEmit(importFromUrlUseCase.execute(url))

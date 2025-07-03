@@ -1,4 +1,4 @@
-package com.dastan.markdownapplication
+package com.dastan.markdownapplication.ui
 
 import android.os.Bundle
 import android.view.Menu
@@ -8,9 +8,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
+import com.dastan.markdownapplication.R
 import com.dastan.markdownapplication.data.model.CachedFile
 import com.dastan.markdownapplication.data.model.UiTab
-import com.dastan.markdownapplication.ui.FilePickerLauncher
+import com.dastan.markdownapplication.ui.importfile.FilePickerLauncher
 import com.dastan.markdownapplication.ui.importfile.ImportDialogFragment
 import com.dastan.markdownapplication.ui.importfile.ImportViewModel
 import com.dastan.markdownapplication.ui.toolbar.ToolbarController
@@ -21,9 +22,7 @@ import com.dastan.markdownapplication.ui.toolbar.ListViewModel
 import com.dastan.markdownapplication.ui.preview.MarkdownPreviewFragment
 import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onEach
 
 //TODO Диалог когда нету файлов
 @AndroidEntryPoint

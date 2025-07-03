@@ -5,8 +5,8 @@ import com.dastan.markdownapplication.data.local.FileDao
 import kotlinx.coroutines.flow.Flow
 
 class CachedFileRepository(private val fileDao: FileDao) {
-    suspend fun saveFile(name: String, content: String):Long =
-        fileDao.insert(CachedFile(name = name, content = content, lastOpened = System.currentTimeMillis()))
+    suspend fun saveFile(id:String, name: String, content: String):Long =
+        fileDao.insert(CachedFile(id=id, name = name, content = content, lastOpened = System.currentTimeMillis()))
 
     fun getAllFiles(): Flow<List<CachedFile>> = fileDao.getAll()
 
@@ -14,5 +14,5 @@ class CachedFileRepository(private val fileDao: FileDao) {
 
     suspend fun markOpened(file: CachedFile) =
         fileDao.insert(file.copy(lastOpened = System.currentTimeMillis()))
-    suspend fun renameFile(id: Long, newName: String) = fileDao.rename(id, newName)
+    suspend fun renameFile(id: String, newName: String) = fileDao.rename(id, newName)
 }

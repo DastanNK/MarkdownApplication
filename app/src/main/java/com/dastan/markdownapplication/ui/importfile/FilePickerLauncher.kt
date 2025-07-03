@@ -1,4 +1,4 @@
-package com.dastan.markdownapplication.ui
+package com.dastan.markdownapplication.ui.importfile
 
 import android.app.Activity
 import android.content.Intent
@@ -8,7 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 
 class FilePickerLauncher(
-    private val activity: AppCompatActivity,
+    activity: AppCompatActivity,
     private val onFilePicked: (Uri) -> Unit
 ) {
     private val launcher: ActivityResultLauncher<Intent> = activity.registerForActivityResult(

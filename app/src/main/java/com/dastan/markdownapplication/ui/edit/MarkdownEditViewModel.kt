@@ -16,12 +16,12 @@ class MarkdownEditViewModel @Inject constructor(private val updateFileUseCase: U
     private val _current = MutableStateFlow<CachedFile?>(null)
     val current = _current.asStateFlow()
 
-    fun setFile(f: CachedFile) { _current.value = f }
+    fun setFile(cur: CachedFile) { _current.value = cur }
 
     fun updateContent(text: String) = viewModelScope.launch {
-        _current.value?.let { f ->
-            _current.value = f.copy(content = text)
-            updateFileUseCase.execute(f.name, text)                 // Room UPDATE
+        _current.value?.let {cur ->
+            _current.value = cur.copy(content = text)
+            updateFileUseCase.execute(cur.name, text)
         }
     }
 

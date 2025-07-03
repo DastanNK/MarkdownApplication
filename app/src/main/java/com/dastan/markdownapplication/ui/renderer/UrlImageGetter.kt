@@ -1,4 +1,4 @@
-package com.dastan.markdownapplication.ui
+package com.dastan.markdownapplication.ui.renderer
 
 import android.content.Context
 import android.graphics.Bitmap

@@ -25,7 +25,7 @@ object AppModule {
     fun provideDatabase(
         @ApplicationContext ctx: Context
     ): AppDatabase =
-        Room.databaseBuilder(ctx, AppDatabase::class.java, "markdown2.db")
+        Room.databaseBuilder(ctx, AppDatabase::class.java, "markdown3.db")
             .fallbackToDestructiveMigration()
             .build()
 
@@ -45,11 +45,8 @@ object AppModule {
     ): EditFileRepository = EditFileRepository(dao)
 
     @Provides
+    @Singleton
     fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
-
-    @Provides
-    fun provideAddFileUseCase(repo: CachedFileRepository) =
-        AddFileUseCase(repo)
 
     @Provides
     fun provideGetAllFilesUseCase(repo: CachedFileRepository) =
@@ -62,22 +59,27 @@ object AppModule {
     @Provides
     fun provideMarkFileOpenedUseCase(repo: CachedFileRepository) =
         MarkFileOpenedUseCase(repo)
+    @Provides
+    fun provideRenameFileUseCase() =
+        RenameFileUseCase()
 
     @Provides
     fun provideImportFileUseCase(
-        addFile: AddFileUseCase,
+        renameFileUseCase: RenameFileUseCase,
         repo: CachedFileRepository
-    ) = ImportFileUseCase(addFile, repo)
+    ) = ImportFileUseCase(renameFileUseCase, repo)
 
     @Provides
     fun provideImportFromUriUseCase(
-        importFile: ImportFileUseCase
-    ) = ImportFromUriUseCase(importFile)
+        importFile: ImportFileUseCase,
+        ioDispatcher: CoroutineDispatcher
+    ) = ImportFromUriUseCase(importFile, ioDispatcher)
 
     @Provides
     fun provideImportFromUrlUseCase(
-        importFile: ImportFileUseCase
-    ) = ImportFromUrlUseCase(importFile)
+        importFile: ImportFileUseCase,
+        ioDispatcher: CoroutineDispatcher
+    ) = ImportFromUrlUseCase(importFile, ioDispatcher)
 
     @Provides
     fun provideParseMarkdownUseCase() = ParseMarkdownUseCase()

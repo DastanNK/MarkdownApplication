@@ -8,10 +8,8 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import com.dastan.markdownapplication.domain.usecases.ParseMarkdownUseCase
-import com.dastan.markdownapplication.ui.MarkdownRenderer
+import com.dastan.markdownapplication.ui.renderer.MarkdownRenderer
 import com.dastan.markdownapplication.ui.edit.MarkdownEditViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
