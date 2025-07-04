@@ -22,7 +22,10 @@ import com.dastan.markdownapplication.ui.edit.TabsViewModel
 import com.dastan.markdownapplication.ui.menu.ListViewModel
 import com.dastan.markdownapplication.ui.preview.MarkdownPreviewFragment
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 
 @AndroidEntryPoint
@@ -118,11 +121,28 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
             }
         }
         lifecycleScope.launchWhenStarted {
-            merge(listViewModel.open, importVM.opened).collect { file ->
+            merge(
+                listViewModel.open,
+                importVM.events
+                    .filterIsInstance<ImportViewModel.UiEvent.FileOpened>()
+                    .map { it.file }
+            ).collect { file ->
                 editViewModel.setFile(file)
                 showEditFragment()
                 tabsVM.select(UiTab.EDIT)
             }
+        }
+
+        lifecycleScope.launchWhenStarted {
+            importVM.events
+                .filterIsInstance<ImportViewModel.UiEvent.Error>()
+                .collect { event ->
+                    Snackbar.make(
+                        findViewById(R.id.content_frame),
+                        event.message,
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
         }
     }
 
