@@ -7,7 +7,9 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -36,10 +38,20 @@ class MarkdownEditFragment : Fragment() {
         val root = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(32)
+            setBackgroundColor(ContextCompat.getColor(ctx, R.color.my_background))
+
         }
 
-        edit = EditText(ctx).apply { textSize = 16f }
-        btnSave = Button(ctx).apply { text = getString(R.string.save) }
+        edit = EditText(ctx).apply {
+            textSize = 16f
+            setTextColor(ContextCompat.getColor(ctx, R.color.my_text_color))
+            setBackgroundColor(ContextCompat.getColor(ctx, R.color.my_edit_background))
+        }
+        btnSave = Button(ctx).apply {
+            text = getString(R.string.save)
+            setTextColor(ContextCompat.getColor(ctx, R.color.my_button_text))
+            setBackgroundColor(ContextCompat.getColor(ctx, R.color.my_button_background))
+        }
 
         root.addView(
             edit,
@@ -60,25 +72,33 @@ class MarkdownEditFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        edit.doAfterTextChanged { vm.updateDraft(it.toString()) }
+
         viewLifecycleOwner.lifecycleScope.launch {
-            vm.current
-                .map { it?.content.orEmpty() }
-                .distinctUntilChanged()
-                .collect { newText ->
-                    if (newText != edit.text.toString()) {
-                        val pos = edit.selectionStart.coerceAtLeast(0)
-                        edit.setText(newText)
-                        edit.setSelection(pos.coerceAtMost(newText.length))
-                    }
+            vm.draft.collect { txt ->
+                if (txt != edit.text.toString()) {
+                    val pos = edit.selectionStart.coerceAtLeast(0)
+                    edit.setText(txt)
+                    edit.setSelection(pos.coerceAtMost(txt.length))
                 }
+            }
         }
 
         btnSave.setOnClickListener {
-            vm.updateContent(edit.text.toString())
+            vm.save()
             tabsVM.select(UiTab.PREVIEW)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.content_frame, MarkdownPreviewFragment())
                 .commit()
+        }
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+
+        val reallyGoingAway = isRemoving && !requireActivity().isChangingConfigurations
+
+        if (reallyGoingAway) {
+            vm.discardDraft()
         }
     }
 }

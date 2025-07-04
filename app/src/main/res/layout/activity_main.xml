@@ -7,22 +7,19 @@
                                            android:layout_height="match_parent"
                                            tools:context=".ui.MainActivity">
 
-    <!-- MAIN CONTENT -->
     <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-        <!-- Toolbar -->
         <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar"
-                android:background="?attr/colorPrimary"
-                android:title="Untitled.md"
-                android:titleTextColor="@android:color/white"
+                android:background="@color/my_background"
+                android:title="@string/untitled_md"
+                android:titleTextColor="@color/my_text_color"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize" />
 
-        <!-- Tabs: Edit / Preview -->
         <LinearLayout
                 android:id="@+id/tab_layout"
                 android:layout_width="match_parent"
@@ -36,7 +33,7 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="EDIT"
+                    android:text="@string/edit"
                     android:textStyle="bold"
                     android:textColor="#000"
                     android:background="@drawable/tab_indicator_left"
@@ -47,14 +44,13 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="PREVIEW"
+                    android:text="@string/preview"
                     android:textStyle="bold"
                     android:textColor="#000"
                     android:background="@drawable/tab_indicator_right"
                     android:layout_height="match_parent" />
         </LinearLayout>
 
-        <!-- Content Area for Fragments -->
         <FrameLayout
                 android:id="@+id/content_frame"
                 android:layout_width="match_parent"
@@ -63,13 +59,13 @@
                 android:background="@android:color/white" />
     </LinearLayout>
 
-    <!-- Navigation Drawer -->
     <com.google.android.material.navigation.NavigationView
             android:id="@+id/navigation_view"
             android:layout_width="280dp"
             android:layout_height="match_parent"
             android:layout_gravity="start"
             android:fitsSystemWindows="true"
-            android:background="@android:color/white"
-            app:menu="@menu/drawer_menu" />
+            android:background="@color/my_background"
+            app:menu="@menu/drawer_menu"
+            app:itemTextColor="@color/my_text_color"/>
 </androidx.drawerlayout.widget.DrawerLayout>

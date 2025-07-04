@@ -33,7 +33,7 @@ class ImportDialogFragment : DialogFragment() {
                     showUrlDialog(cb)
                 }
             }
-            .setNegativeButton(R.string.cancel, null)
+//            .setNegativeButton(R.string.cancel, null)
             .create()
 
     }

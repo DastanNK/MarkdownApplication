@@ -1,9 +1,11 @@
 package com.dastan.markdownapplication.ui.toolbar
 
 
+import android.util.Log
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.dastan.markdownapplication.R
 

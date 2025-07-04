@@ -10,5 +10,9 @@
     <string name="import_name">Импорт</string>
     <string name="url_hint">https://example.com/file.md</string>
     <string name="save">Сохранить</string>
+    <string name="add_file">Добавить файл</string>
+    <string name="edit">EDIT</string>
+    <string name="preview">PREVIEW</string>
+    <string name="untitled_md">Untitled.md</string>
 
 </resources>

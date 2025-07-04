@@ -6,6 +6,7 @@ import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import com.dastan.markdownapplication.R
@@ -18,13 +19,12 @@ import com.dastan.markdownapplication.ui.toolbar.ToolbarController
 import com.dastan.markdownapplication.ui.edit.MarkdownEditFragment
 import com.dastan.markdownapplication.ui.edit.MarkdownEditViewModel
 import com.dastan.markdownapplication.ui.edit.TabsViewModel
-import com.dastan.markdownapplication.ui.toolbar.ListViewModel
+import com.dastan.markdownapplication.ui.menu.ListViewModel
 import com.dastan.markdownapplication.ui.preview.MarkdownPreviewFragment
 import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.merge
 
-//TODO Диалог когда нету файлов
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
     private val tabsVM: TabsViewModel by viewModels()
@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
     private lateinit var toolbarController: ToolbarController
     private lateinit var filePickerLauncher: FilePickerLauncher
 
-    //private var addDialogShown = false
+    private var dialogShown = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,7 +73,10 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
             drawerLayout.closeDrawers()
             true
         }
+        tabEdit.setTextColor(ContextCompat.getColorStateList(this, R.color.my_button_text))
 
+
+        tabPreview.setTextColor(ContextCompat.getColorStateList(this, R.color.my_button_text))
         tabEdit.setOnClickListener {
             highlightTab(true)
             showEditFragment()
@@ -87,6 +90,7 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
 
         observeViewModel()
         observeTabs()
+        openDialogFirstTime(savedInstanceState)
     }
 
 
@@ -97,11 +101,21 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
     override fun onImportFromUrl(url: String) {
         importVM.fromUrl(url)
     }
-
-
+    private fun highlightTab(editSelected: Boolean) {
+        tabEdit.isSelected = editSelected
+        tabPreview.isSelected = !editSelected
+    }
+    private fun openDialogFirstTime(savedInstanceState: Bundle?){
+        if (savedInstanceState == null && !dialogShown) {
+            dialogShown = true
+            ImportDialogFragment().show(supportFragmentManager, "import_dialog")
+        }
+    }
     private fun observeViewModel() {
         lifecycleScope.launchWhenStarted {
-            listViewModel.files.collect { updateDrawerMenu(it) }
+            listViewModel.files.collect { files ->
+                updateDrawerMenu(files)
+            }
         }
         lifecycleScope.launchWhenStarted {
             merge(listViewModel.open, importVM.opened).collect { file ->
@@ -114,8 +128,8 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
 
     private fun updateDrawerMenu(fileList: List<CachedFile>) {
         drawerMenu.clear()
-        drawerMenu.add(0, R.id.nav_add_file, 0, "Добавить файл")
-        fileList.forEach { f -> drawerMenu.add(f.name) }
+        drawerMenu.add(0, R.id.nav_add_file, 0, R.string.add_file)
+        fileList.forEach { file -> drawerMenu.add(file.name) }
     }
 
     private fun showEditFragment() {
@@ -129,13 +143,11 @@ class MainActivity : AppCompatActivity(), ImportDialogFragment.Callback {
             .replace(R.id.content_frame, MarkdownPreviewFragment())
             .commit()
     }
+
     private fun observeTabs() = lifecycleScope.launchWhenStarted {
         tabsVM.tab.collect { tab -> highlightTab(tab == UiTab.EDIT) }
     }
 
-    fun highlightTab(editSelected: Boolean) {
-        tabEdit.isSelected = editSelected
-        tabPreview.isSelected = !editSelected
-    }
+
 }
 

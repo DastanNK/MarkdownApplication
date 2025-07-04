@@ -12,17 +12,30 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MarkdownEditViewModel @Inject constructor(private val updateFileUseCase: UpdateFileUseCase): ViewModel()  {
-    private val _current = MutableStateFlow<CachedFile?>(null)
-    val current = _current.asStateFlow()
+class MarkdownEditViewModel @Inject constructor(private val updateFileUseCase: UpdateFileUseCase) : ViewModel() {
+    private val _file = MutableStateFlow<CachedFile?>(null)
+    val file: StateFlow<CachedFile?> = _file
 
-    fun setFile(cur: CachedFile) { _current.value = cur }
+    val draft = MutableStateFlow("")
 
-    fun updateContent(text: String) = viewModelScope.launch {
-        _current.value?.let {cur ->
-            _current.value = cur.copy(content = text)
-            updateFileUseCase.execute(cur.name, text)
-        }
+    fun setFile(f: CachedFile) {
+        _file.value = f
+        draft.value = f.content
+    }
+
+    fun updateDraft(text: String) {
+        draft.value = text
+    }
+
+    fun save() = viewModelScope.launch {
+        val cur = _file.value ?: return@launch
+        val newText = draft.value
+        _file.value = cur.copy(content = newText)
+        updateFileUseCase.execute(cur.name, newText)
+    }
+    fun discardDraft() {
+        val cur = _file.value ?: return
+        draft.value = cur.content
     }
 
 }

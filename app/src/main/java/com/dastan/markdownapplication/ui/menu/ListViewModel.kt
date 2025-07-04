@@ -1,4 +1,4 @@
-package com.dastan.markdownapplication.ui.toolbar
+package com.dastan.markdownapplication.ui.menu
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

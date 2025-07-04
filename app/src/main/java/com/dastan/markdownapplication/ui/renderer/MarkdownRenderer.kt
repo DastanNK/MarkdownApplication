@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.ContextCompat
 import com.dastan.markdownapplication.R
 import com.dastan.markdownapplication.core.ImageMemoryCache
 import com.dastan.markdownapplication.data.model.Inline
@@ -51,6 +52,8 @@ class MarkdownRenderer(
         TextView(context).apply {
             text = buildSpannable(p.segments)
             textSize = 14f
+            setTextColor(ContextCompat.getColor(context, R.color.my_text_color)) // 💡 Важно
+
         }
 
     private fun renderTable(t: MarkdownBlock.Table): View {

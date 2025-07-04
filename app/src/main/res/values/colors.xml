@@ -2,4 +2,9 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="my_text_color">#000000</color>
+    <color name="my_background">#FFFFFF</color>
+    <color name="my_edit_background">#FFFFFF</color>
+    <color name="my_button_text">#000000</color>
+    <color name="my_button_background">#F1F1F1</color>
 </resources>
