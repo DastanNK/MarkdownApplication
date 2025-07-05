@@ -14,5 +14,6 @@
     <string name="edit">EDIT</string>
     <string name="preview">PREVIEW</string>
     <string name="untitled_md">Untitled.md</string>
+    <string name="add_new_file">Add New File</string>
 
 </resources>
