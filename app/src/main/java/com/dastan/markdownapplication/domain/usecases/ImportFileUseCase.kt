@@ -1,10 +1,8 @@
 package com.dastan.markdownapplication.domain.usecases
 
-import android.util.Log
 import com.dastan.markdownapplication.data.model.CachedFile
 import com.dastan.markdownapplication.data.repositiry.CachedFileRepository
 import com.dastan.markdownapplication.data.repositiry.MarkdownFileSource
-import java.util.*
 
 class ImportFileUseCase(
     private val renameFile: RenameFileUseCase,

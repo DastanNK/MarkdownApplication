@@ -1,12 +1,18 @@
 package com.dastan.markdownapplication.domain.usecases
 
+import android.util.Log
 import com.dastan.markdownapplication.data.model.Inline
 import com.dastan.markdownapplication.data.model.MarkdownBlock
 
 
 class ParseMarkdownUseCase {
-    private val token = Regex(
-        """(\*\*(.+?)\*\*|__(.+?)__|\*(.+?)\*|_(.+?)_|~~(.+?)~~)"""
+    private val patterns = listOf(
+        Regex("""\*\*(.+?)\*\*""") to { inner: List<Inline> -> Inline.Bold(inner) },
+        Regex("""__(.+?)__""") to { inner: List<Inline> -> Inline.Bold(inner) },
+        Regex("""\*(?!\*)(.+?)\*""") to { inner: List<Inline> -> Inline.Italic(inner) },
+        Regex("""_(?!_)(.+?)_""") to { inner: List<Inline> -> Inline.Italic(inner) },
+        Regex("""~~(.+?)~~""") to { inner: List<Inline> -> Inline.Strike(inner) },
+
     )
     fun execute(markdown: String): List<MarkdownBlock> {
         val blocks = mutableListOf<MarkdownBlock>()
@@ -25,27 +31,34 @@ class ParseMarkdownUseCase {
                 continue
             }
 
-            if (line.trim().startsWith("|")) {
-                val tableLines = mutableListOf<String>()
-                while (index < lines.size && lines[index].trim().startsWith("|")) {
-                    tableLines += lines[index]
-                    index++
+            if (line.trim().startsWith("|") && index + 1 < lines.size) {
+                val headerCells = line.trim().split("|").map { it.trim() }
+                    .dropWhile { it.isEmpty() }
+                    .dropLastWhile { it.isEmpty() }
+
+                val nextLine = lines[index + 1]
+                if (isTableSeparator(nextLine, headerCells.size)) {
+                    val tableLines = mutableListOf<String>()
+                    while (index < lines.size && lines[index].trim().startsWith("|")) {
+                        tableLines += lines[index]
+                        index++
+                    }
+                    val table = parseTable(tableLines)
+                    if (table != null) {
+                        blocks.add(table)
+                    } else {
+                        val paragraphText = tableLines.joinToString("\n")
+                        blocks.add(MarkdownBlock.Paragraph(parseInline(paragraphText)))
+                    }
+                    continue
                 }
-                val table = parseTable(tableLines)
-                if (table != null) {
-                    blocks.add(table)
-                } else {
-                    val paragraphText = tableLines.joinToString("\n")
-                    blocks.add(MarkdownBlock.Paragraph(listOf(Inline.Text(paragraphText))))
-                }
-                continue
             }
 
             val headingMatch = Regex("""^(#{1,6})\s+(.*)$""").find(line)
             if (headingMatch != null) {
                 val level = headingMatch.groupValues[1].length
-                val text  = headingMatch.groupValues[2]
-                blocks += MarkdownBlock.Heading(level, text)
+                val content = headingMatch.groupValues[2]
+                blocks += MarkdownBlock.Heading(level, parseInline(content))
                 index++
                 continue
             }
@@ -57,25 +70,45 @@ class ParseMarkdownUseCase {
         }
         return blocks
     }
+    private fun isTableSeparator(line: String, expectedColumnCount: Int): Boolean {
+        val parts = line.trim().split("|").map { it.trim() }
+        val cells = parts.dropWhile { it.isEmpty() }.dropLastWhile { it.isEmpty() }
 
-    private fun parseInline(src: String): List<Inline> {
-        val list  = mutableListOf<Inline>()
-        var last  = 0
-        for (m in token.findAll(src)) {
-            if (m.range.first > last)
-                list.add(Inline.Text(src.substring(last, m.range.first)))
-            when {
-                m.groupValues[2].isNotEmpty() || m.groupValues[3].isNotEmpty() ->
-                    list.add(Inline.Bold(m.groupValues[2] + m.groupValues[3]))
-                m.groupValues[4].isNotEmpty() || m.groupValues[5].isNotEmpty() ->
-                    list.add(Inline.Italic(m.groupValues[4] + m.groupValues[5]))
-                m.groupValues[6].isNotEmpty() ->
-                    list.add(Inline.Strike(m.groupValues[6]))
+        if (cells.size != expectedColumnCount) return false
+
+        return cells.all { it.matches(Regex("^:?-{1,}:?$")) }
+    }
+
+
+    private fun parseInline(text: String): List<Inline> {
+        if (text.isEmpty()) return emptyList()
+
+        var earliestMatchStart = Int.MAX_VALUE
+        var selectedMatch: MatchResult? = null
+        var selectedConstructor: ((List<Inline>) -> Inline)? = null
+
+        for ((regex, constructor) in patterns) {
+            val match = regex.find(text)
+            if (match != null && match.range.first < earliestMatchStart) {
+                earliestMatchStart = match.range.first
+                selectedMatch = match
+                selectedConstructor = constructor
             }
-            last = m.range.last + 1
         }
-        if (last < src.length) list.add(Inline.Text(src.substring(last)))
-        return list
+
+        if (selectedMatch != null && selectedConstructor != null) {
+            val before = text.substring(0, selectedMatch.range.first)
+            val matched = selectedMatch.groupValues[1]
+            val after = text.substring(selectedMatch.range.last + 1)
+
+            return buildList {
+                addAll(parseInline(before))
+                add(selectedConstructor(parseInline(matched)))
+                addAll(parseInline(after))
+            }
+        }
+
+        return listOf(Inline.Text(text))
     }
 
     private fun parseTable(lines: List<String>): MarkdownBlock.Table? {

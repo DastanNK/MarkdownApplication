@@ -1,6 +1,7 @@
 package com.dastan.markdownapplication.ui.edit
 
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -44,6 +45,7 @@ class MarkdownEditFragment : Fragment() {
 
         edit = EditText(ctx).apply {
             textSize = 16f
+            gravity = Gravity.TOP or Gravity.START
             setTextColor(ContextCompat.getColor(ctx, R.color.my_text_color))
             setBackgroundColor(ContextCompat.getColor(ctx, R.color.my_edit_background))
         }

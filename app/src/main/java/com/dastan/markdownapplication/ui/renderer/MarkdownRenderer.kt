@@ -41,7 +41,7 @@ class MarkdownRenderer(
 
     private fun renderHeading(h: MarkdownBlock.Heading): View =
         TextView(context).apply {
-            text = h.text
+            text = buildSpannable(h.content)
             textSize = when (h.level) {
                 1 -> 24f; 2 -> 22f; 3 -> 20f; 4 -> 18f; 5 -> 16f else -> 14f
             }
@@ -114,25 +114,32 @@ class MarkdownRenderer(
 
         return imageView
     }
-    private fun buildSpannable(parts: List<Inline>): Spanned =
-        SpannableStringBuilder().apply {
-            parts.forEach { part ->
-                val start = length
-                when (part) {
-                    is Inline.Text   -> append(part.value)
-                    is Inline.Bold   -> append(part.value)
-                    is Inline.Italic -> append(part.value)
-                    is Inline.Strike -> append(part.value)
+    private fun buildSpannable(parts: List<Inline>): Spanned {
+        val builder = SpannableStringBuilder()
+        appendInlines(builder, parts)
+        return builder
+    }
+
+    private fun appendInlines(builder: SpannableStringBuilder, inlines: List<Inline>) {
+        for (inline in inlines) {
+            val start = builder.length
+            when (inline) {
+                is Inline.Text -> builder.append(inline.text)
+                is Inline.Bold -> {
+                    appendInlines(builder, inline.content)
+                    builder.setSpan(StyleSpan(Typeface.BOLD), start, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }
-                val end = length
-                when (part) {
-                    is Inline.Bold   -> setSpan(StyleSpan(Typeface.BOLD), start, end, 0)
-                    is Inline.Italic -> setSpan(StyleSpan(Typeface.ITALIC), start, end, 0)
-                    is Inline.Strike -> setSpan(StrikethroughSpan(), start, end, 0)
-                    else             -> {}
+                is Inline.Italic -> {
+                    appendInlines(builder, inline.content)
+                    builder.setSpan(StyleSpan(Typeface.ITALIC), start, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+                is Inline.Strike -> {
+                    appendInlines(builder, inline.content)
+                    builder.setSpan(StrikethroughSpan(), start, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }
             }
         }
+    }
 
 
 }
