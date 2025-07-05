@@ -54,5 +54,4 @@
 ---
 ## Примеры
 Можно рассмотреть работу приложения на следующих примерах:
-1. [https://raw.githubusercontent.com/Wolfram158/MarkdownApp/main/README.md](https://raw.githubusercontent.com/DastanNK/MarkdownTest/refs/heads/main/README.md)
-
+1. https://raw.githubusercontent.com/DastanNK/MarkdownTest/refs/heads/main/README.md
